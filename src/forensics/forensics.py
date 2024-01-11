@@ -65,7 +65,7 @@ class Forensics:
                     # have we exceeded the maximum wait time?
                     # 40 tries * 15 seconds
                     if (count * self.check_interval_wait) >= self.max_wait_time:
-                        self.logger.debug('Hit max wait time: %s', self.max_wait_time)
+                        self.logger.error('Max wait time of %s seconds exceeded.', self.max_wait_time)
 
                         # set the error code
                         ret_val = -98
