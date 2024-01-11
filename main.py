@@ -41,12 +41,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # validate the inputs
-    if args.run_dir != '':
+    if args.run_dir == '':
         # missing 1 or more params
         ret_val: int = -2
-
-    # should we continue?
-    if ret_val == 0:
+    else:
         # do the forensics
         ret_val: int = forensics_obj.run(args.run_dir)
 
