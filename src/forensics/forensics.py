@@ -10,6 +10,7 @@
     Main entry point for the forensics microservice application
 """
 import os
+import time
 
 from src.common.logger import LoggingUtil
 
@@ -26,25 +27,70 @@ class Forensics:
         # get the environment this instance is running on
         self.system: str = os.getenv('SYSTEM', 'System name not set')
 
+        # set the time limits (seconds)
+        self.max_wait_time: int = 400
+        self.check_interval_wait: int = 15
+
         # get the log level and directory from the environment.
         log_level, log_path = LoggingUtil.prep_for_logging()
 
         # create a logger
-        self.logger = LoggingUtil.init_logging("iRODS.forensics", level=log_level, line_format='medium', log_file_path=log_path)
+        self.logger = LoggingUtil.init_logging("iRODS.Forensics", level=log_level, line_format='medium', log_file_path=log_path)
 
-    @ staticmethod
-    def run(run_dir: str) -> int:
+    def run(self, run_dir: str) -> int:
         """
-        Performs the requested type of forensics operation.
+        Performs the forensics operation.
 
         The supervisor will mount the /data directory for this component by default.
 
-        :param run_dir: The base path of the directory to use for the forensics operations.
+        :param run_dir: The directory path to use for the forensics operations.
 
         :return:
         """
         # init the return value
         ret_val: int = 0
+
+        # make sure the directory exists
+        if os.path.isdir(run_dir):
+            # init the check counter
+            count: int = 0
+
+            # init the flag for processing complete
+            keep_running: bool = True
+
+            # do work
+            while keep_running:
+                # is the file there that marks the testing is complete?
+                if not os.path.isfile(os.path.join(run_dir, 'PROVIDER_tests.complete')):
+                    # have we exceeded the maximum wait time?
+                    # 40 tries * 15 seconds
+                    if (count * self.check_interval_wait) >= self.max_wait_time:
+                        self.logger.debug('Hit max wait time: %s', self.max_wait_time)
+
+                        # set the error code
+                        ret_val = -98
+
+                        # no need to continue
+                        break
+
+                    # increment the counter
+                    count += 1
+
+                    # keep waiting for the file that signifies testing complete
+                    time.sleep(self.check_interval_wait)
+                else:
+                    self.logger.debug('End of testing marker found.')
+
+                    # TODO: parse the files
+                    # TODO: analyze the results
+                    # TODO: do something with the results
+
+                    # end the processing
+                    keep_running = False
+
+        # cant work on this unless it exists
+        else:
+            ret_val = -99
 
         # return to the caller
         return ret_val
