@@ -84,9 +84,10 @@ class Forensics:
                     else:
                         self.logger.info('End of testing marker found for: %s', run_dir)
 
-                        # TODO: parse the files
+                        # TODO: gather the test xml file(s)
+                        # TODO: gather iRODS server log(s)
                         # TODO: analyze the results
-                        # TODO: do something with the results
+                        # TODO: do something with the results (notifications, persist in a DB...?)
 
                         # end the processing
                         keep_running = False
