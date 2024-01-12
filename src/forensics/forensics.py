@@ -28,8 +28,8 @@ class Forensics:
         self.system: str = os.getenv('SYSTEM', 'System name not set')
 
         # set the time limits (seconds)
-        self.max_wait: int = os.getenv('FORENSICS_MAX_WAIT', 600)
-        self.check_interval: int = os.getenv('FORENSICS_CHECK_INTERVAL', 15)
+        self.max_wait: int = int(os.getenv('FORENSICS_MAX_WAIT', '600'))
+        self.check_interval: int = int(os.getenv('FORENSICS_CHECK_INTERVAL', '15'))
 
         # get the log level and directory from the environment.
         log_level, log_path = LoggingUtil.prep_for_logging()
