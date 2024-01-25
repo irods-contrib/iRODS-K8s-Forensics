@@ -64,6 +64,9 @@ class Forensics:
                 # do work
                 while keep_running:
                     # is the file there that marks the testing is complete?
+                    # there is a problem here in the case of topology tests where more than one
+                    # provider or consumer pods could have tests that create results.
+                    # When do you stop looking? should more workflow context be fed into this component?
                     if not os.path.isfile(os.path.join(run_dir, 'PROVIDER_tests.complete')):
                         # have we exceeded the maximum wait time?
                         # 40 tries * 15 seconds
