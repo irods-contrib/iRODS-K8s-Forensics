@@ -57,7 +57,7 @@ class Forensics:
 
         :return:
         """
-        self.logger.info('Forensics version %s start: run_dir: %s, workflow type: %s', self.app_version, run_dir)
+        self.logger.info('Forensics version %s start: run_dir: %s', self.app_version, run_dir)
 
         # init the return value
         ret_val: int = 0
