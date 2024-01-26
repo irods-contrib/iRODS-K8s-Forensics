@@ -57,7 +57,7 @@ class Forensics:
 
         :return:
         """
-        self.logger.info('Start of run for %s', run_dir)
+        self.logger.info('Forensice version %s start: run_dir: %s, workflow type: %s', self.app_version, run_dir)
 
         # init the return value
         ret_val: int = 0
@@ -136,7 +136,7 @@ class Forensics:
             self.logger.exception('Exception: Error processing request for run: %s', run_dir)
             ret_val = -99
 
-        self.logger.info('End of run for %s', run_dir)
+        self.logger.info('Forensics complete: run_dir: %s, ret_val: %s', run_dir, ret_val)
 
         # return to the caller
         return ret_val
