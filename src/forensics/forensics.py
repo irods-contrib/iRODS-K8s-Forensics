@@ -11,8 +11,11 @@
 """
 import os
 import time
+import sys
+import json
 
 from src.common.logger import LoggingUtil
+from src.common.pg_impl import PGImplementation
 
 
 class Forensics:
@@ -36,6 +39,13 @@ class Forensics:
 
         # create a logger
         self.logger = LoggingUtil.init_logging("iRODS.Forensics", level=log_level, line_format='medium', log_file_path=log_path)
+
+        # specify the DB to get a connection
+        # note the extra comma makes this single item a singleton tuple
+        db_names: tuple = ('irods-sv',)
+
+        # create a DB connection object
+        self.db_info: PGImplementation = PGImplementation(db_names, _logger=self.logger)
 
     def run(self, run_dir: str) -> int:
         """
@@ -61,47 +71,111 @@ class Forensics:
                 # init the flag for processing complete
                 keep_running: bool = True
 
-                # do work
-                while keep_running:
-                    # is the file there that marks the testing is complete?
-                    # there is a problem here in the case of topology tests where more than one
-                    # provider or consumer pods could have tests that create results.
-                    # When do you stop looking? should more workflow context be fed into this component?
-                    if not os.path.isfile(os.path.join(run_dir, 'PROVIDER_tests.complete')):
-                        # have we exceeded the maximum wait time?
-                        # 40 tries * 15 seconds
-                        if (count * self.check_interval) >= self.max_wait:
-                            self.logger.error('Max wait time of %s seconds exceeded for run %s.', self.max_wait, run_dir)
+                if sys.platform == 'win32':
+                    # get the run ID
+                    run_id: str = run_dir.split('\\')[-1]
+                else:
+                    # get the run ID
+                    run_id: str = run_dir.split('/')[-1]
 
-                            # set the error code
-                            ret_val = -98
+                # try to make the call for records
+                run_data: json = self.db_info.get_run_def(run_id)
 
-                            # no need to continue
+                # did getting the data to go ok
+                if run_data != -1:
+                    # do work
+                    while keep_running:
+                        # get the list of tests for this run
+                        tests_done: int = self.get_tests_done(run_dir, run_data)
+
+                        # were the tests all completed?
+                        if tests_done == 1:
+                            self.logger.info('End of testing markers found for: %s', run_dir)
+
+                            # TODO: gather the test xml file(s)
+                            # TODO: gather iRODS server log(s)
+                            # TODO: analyze the results
+                            # TODO: do something with the results (notifications, persist in a DB...?)
+
+                            # end the processing
+                            keep_running = False
+                        elif tests_done == 0:
+                            # have we exceeded the maximum wait time? default is 40 tries * 15 seconds
+                            if (count * self.check_interval) >= self.max_wait:
+                                self.logger.error('Max wait time of %s seconds exceeded for run %s.', self.max_wait, run_dir)
+
+                                # set the error code
+                                ret_val = -98
+
+                                # no need to continue
+                                break
+
+                            # increment the counter
+                            count += 1
+
+                            # keep waiting for the file that signifies testing complete
+                            time.sleep(self.check_interval)
+                        else:
+                            self.logger.info('Warning No tests found for run %s, status %s.', run_dir, tests_done)
+
+                            # this is not an error per se, so exit normally
+                            ret_val = 0
+
+                            # no tests, no need to continue
                             break
 
-                        # increment the counter
-                        count += 1
-
-                        # keep waiting for the file that signifies testing complete
-                        time.sleep(self.check_interval)
-                    else:
-                        self.logger.info('End of testing marker found for: %s', run_dir)
-
-                        # TODO: gather the test xml file(s)
-                        # TODO: gather iRODS server log(s)
-                        # TODO: analyze the results
-                        # TODO: do something with the results (notifications, persist in a DB...?)
-
-                        # end the processing
-                        keep_running = False
-
+                # cant work on this unless run data exists
+                else:
+                    self.logger.error('Error: Request run data was not found for: %s', run_dir)
+                    ret_val = -96
             # cant work on this unless it exists
             else:
-                ret_val = -99
+                self.logger.error('Error: Request run_dir was not found for: %s', run_dir)
+                ret_val = -97
         except Exception:
             self.logger.exception('Exception: Error processing request for run: %s', run_dir)
+            ret_val = -99
 
         self.logger.info('End of run for %s', run_dir)
+
+        # return to the caller
+        return ret_val
+
+    @staticmethod
+    def get_tests_done(run_dir: str, run_data: json) -> int:
+        """
+        Gets the list of run tests requested
+
+        :param run_dir:
+        :param run_data:
+        :return:
+        """
+        # init the retval
+        ret_val: int = 0
+
+        # init the test counter
+        count: int = 0
+
+        # get the tests
+        tests = run_data['request_data']['tests']
+
+        # if there were no tests for this run
+        if len(tests) == 0:
+            # set a return code to not look any further
+            ret_val = -95
+        else:
+            # for each test in the request list
+            for test in tests:
+                for key, value in test.items():
+                    # if the end of test marker found, or a test run was specified with no individual tests requested
+                    if os.path.isfile(os.path.join(run_dir, f'{key}_tests.complete')) or len(value) == 0:
+                        # increment the found counter
+                        count += 1
+
+            # were all the tests discovered?
+            if len(tests) == count:
+                # set the success return code
+                ret_val = 1
 
         # return to the caller
         return ret_val
