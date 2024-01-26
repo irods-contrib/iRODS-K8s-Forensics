@@ -17,7 +17,7 @@ import pytest
 from src.forensics.forensics import Forensics
 
 
-#@pytest.mark.skip(reason="Local test only")
+@pytest.mark.skip(reason="Local test only")
 def test_run():
     """
     tests doing the normal operations for initial and final forensics.

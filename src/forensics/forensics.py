@@ -92,10 +92,10 @@ class Forensics:
                         if tests_done == 1:
                             self.logger.info('End of testing markers found for: %s', run_dir)
 
-                            # TODO: gather the test xml file(s)
-                            # TODO: gather iRODS server log(s)
-                            # TODO: analyze the results
-                            # TODO: do something with the results (notifications, persist in a DB...?)
+                            # gather the test xml file(s)
+                            # gather iRODS server log(s)
+                            # analyze the results
+                            # do something with the results (notifications, persist in a DB...?)
 
                             # end the processing
                             keep_running = False
