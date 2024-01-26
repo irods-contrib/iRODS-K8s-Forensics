@@ -17,7 +17,7 @@ import pytest
 from src.forensics.forensics import Forensics
 
 
-@pytest.mark.skip(reason="Local test only")
+#@pytest.mark.skip(reason="Local test only")
 def test_run():
     """
     tests doing the normal operations for initial and final forensics.
@@ -46,6 +46,30 @@ def test_run():
 
     # set a run ID
     run_id: str = '3'
+
+    # set up the test directory
+    run_dir: str = os.path.join(os.getenv('TEST_PATH'), run_id)
+
+    # make the call to do an initial stage
+    ret_val = forensics.run(run_dir)
+
+    # make sure of a successful return code and a json file
+    assert ret_val == 0
+
+    # set a run ID
+    run_id: str = '4'
+
+    # set up the test directory
+    run_dir: str = os.path.join(os.getenv('TEST_PATH'), run_id)
+
+    # make the call to do an initial stage
+    ret_val = forensics.run(run_dir)
+
+    # make sure of a successful return code and a json file
+    assert ret_val == 0
+
+    # set a run ID
+    run_id: str = '5'
 
     # set up the test directory
     run_dir: str = os.path.join(os.getenv('TEST_PATH'), run_id)
