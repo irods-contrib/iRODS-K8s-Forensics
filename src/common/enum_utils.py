@@ -28,4 +28,3 @@ class ReturnCodes(int, Enum):
     ERROR_NO_RUN_DIR = -97
     ERROR_NO_RUN_DATA = -96
     ERROR_NO_TESTS = -95
-
