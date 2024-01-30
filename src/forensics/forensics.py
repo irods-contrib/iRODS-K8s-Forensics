@@ -16,6 +16,7 @@ import json
 
 from src.common.logger import LoggingUtil
 from src.common.pg_impl import PGImplementation
+from src.common.enum_utils import ReturnCodes
 
 
 class Forensics:
@@ -60,7 +61,7 @@ class Forensics:
         self.logger.info('Forensics version %s start: run_dir: %s', self.app_version, run_dir)
 
         # init the return value
-        ret_val: int = 0
+        ret_val: int = ReturnCodes.EXIT_CODE_SUCCESS
 
         try:
             # make sure the directory exists
@@ -82,14 +83,14 @@ class Forensics:
                 run_data: json = self.db_info.get_run_def(run_id)
 
                 # did getting the data to go ok
-                if run_data != -1:
+                if run_data != ReturnCodes.DB_ERROR:
                     # do work
                     while keep_running:
                         # get the list of tests for this run
                         tests_done: int = self.get_tests_done(run_dir, run_data)
 
                         # were the tests all completed?
-                        if tests_done == 1:
+                        if tests_done == ReturnCodes.TEST_FOUND_SUCCESS:
                             self.logger.info('End of testing markers found for: %s', run_dir)
 
                             # gather the test xml file(s)
@@ -105,7 +106,7 @@ class Forensics:
                                 self.logger.error('Max wait time of %s seconds exceeded for run %s.', self.max_wait, run_dir)
 
                                 # set the error code
-                                ret_val = -98
+                                ret_val = ReturnCodes.ERROR_TIMEOUT
 
                                 # no need to continue
                                 break
@@ -119,7 +120,7 @@ class Forensics:
                             self.logger.info('Warning No tests found for run %s, status %s.', run_dir, tests_done)
 
                             # this is not an error per se, so exit normally
-                            ret_val = 0
+                            ret_val = ReturnCodes.EXIT_CODE_SUCCESS
 
                             # no tests, no need to continue
                             break
@@ -127,14 +128,14 @@ class Forensics:
                 # cant work on this unless run data exists
                 else:
                     self.logger.error('Error: Request run data was not found for: %s', run_dir)
-                    ret_val = -96
+                    ret_val = ReturnCodes.ERROR_NO_RUN_DIR
             # cant work on this unless it exists
             else:
                 self.logger.error('Error: Request run_dir was not found for: %s', run_dir)
-                ret_val = -97
+                ret_val = ReturnCodes.ERROR_NO_RUN_DIR
         except Exception:
             self.logger.exception('Exception: Error processing request for run: %s', run_dir)
-            ret_val = -99
+            ret_val = ReturnCodes.EXCEPTION_RUN_PROCESSING
 
         self.logger.info('Forensics complete: run_dir: %s, ret_val: %s', run_dir, ret_val)
 
@@ -151,7 +152,7 @@ class Forensics:
         :return:
         """
         # init the retval
-        ret_val: int = 0
+        ret_val: int = ReturnCodes.TEST_FOUND_FAILURE
 
         # init the test counter
         count: int = 0
@@ -162,10 +163,11 @@ class Forensics:
         # if there were no tests for this run
         if len(tests) == 0:
             # set a return code to not look any further
-            ret_val = -95
+            ret_val = ReturnCodes.ERROR_NO_TESTS
         else:
             # for each test in the request list
             for test in tests:
+                # get the dict key/value
                 for key, value in test.items():
                     # if the end of test marker found, or a test run was specified with no individual tests requested
                     if os.path.isfile(os.path.join(run_dir, f'{key}_tests.complete')) or len(value) == 0:
@@ -175,7 +177,7 @@ class Forensics:
             # were all the tests discovered?
             if len(tests) == count:
                 # set the success return code
-                ret_val = 1
+                ret_val = ReturnCodes.TEST_FOUND_SUCCESS
 
         # return to the caller
         return ret_val

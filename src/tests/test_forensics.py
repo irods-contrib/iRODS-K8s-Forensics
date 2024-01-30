@@ -15,6 +15,7 @@ import os
 import pytest
 
 from src.forensics.forensics import Forensics
+from src.common.enum_utils import ReturnCodes
 
 
 @pytest.mark.skip(reason="Local test only")
@@ -27,7 +28,7 @@ def test_run():
     :return:
     """
     # init the return value
-    ret_val: int = 0
+    ret_val: int = ReturnCodes.EXIT_CODE_SUCCESS
 
     # create the target class
     forensics = Forensics()
@@ -42,7 +43,7 @@ def test_run():
     ret_val = forensics.run(run_dir)
 
     # ensure we got a failure code
-    assert ret_val < 0
+    assert ret_val == ReturnCodes.ERROR_NO_RUN_DIR
 
     # set a run ID
     run_id: str = '3'
@@ -54,7 +55,7 @@ def test_run():
     ret_val = forensics.run(run_dir)
 
     # make sure of a successful return code and a json file
-    assert ret_val == 0
+    assert ret_val == ReturnCodes.EXIT_CODE_SUCCESS
 
     # set a run ID
     run_id: str = '4'
@@ -66,7 +67,7 @@ def test_run():
     ret_val = forensics.run(run_dir)
 
     # make sure of a successful return code and a json file
-    assert ret_val == 0
+    assert ret_val == ReturnCodes.EXIT_CODE_SUCCESS
 
     # set a run ID
     run_id: str = '5'
@@ -78,4 +79,4 @@ def test_run():
     ret_val = forensics.run(run_dir)
 
     # make sure of a successful return code and a json file
-    assert ret_val == 0
+    assert ret_val == ReturnCodes.EXIT_CODE_SUCCESS
