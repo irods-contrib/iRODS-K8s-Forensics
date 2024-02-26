@@ -48,17 +48,18 @@ class Forensics:
         # create a DB connection object
         self.db_info: PGImplementation = PGImplementation(db_names, _logger=self.logger)
 
-    def run(self, run_dir: str) -> int:
+    def run(self, run_id: str, run_dir: str) -> int:
         """
         Performs the forensics operation.
 
         The supervisor will mount the /data directory for this component by default.
 
+        :param run_id: The id of the run.
         :param run_dir: The directory path to use for the forensics operations.
 
         :return:
         """
-        self.logger.info('Forensics version %s start: run_dir: %s', self.app_version, run_dir)
+        self.logger.info('Forensics version %s start: run_id: %s, run_dir: %s', self.app_version, run_id, run_dir)
 
         # init the return value
         ret_val: int = ReturnCodes.EXIT_CODE_SUCCESS
@@ -103,7 +104,7 @@ class Forensics:
                         elif tests_done == 0:
                             # have we exceeded the maximum wait time? default is 40 tries * 15 seconds
                             if (count * self.check_interval) >= self.max_wait:
-                                self.logger.error('Max wait time of %s seconds exceeded for run %s.', self.max_wait, run_dir)
+                                self.logger.error('Max wait time of %s seconds exceeded for run id: %s, run_dir: %s.', self.max_wait, run_id, run_dir)
 
                                 # set the error code
                                 ret_val = ReturnCodes.ERROR_TIMEOUT
@@ -117,7 +118,7 @@ class Forensics:
                             # keep waiting for the file that signifies testing complete
                             time.sleep(self.check_interval)
                         else:
-                            self.logger.info('Warning No tests found for run %s, status %s.', run_dir, tests_done)
+                            self.logger.info('Warning No tests found for run id: %s, run_dir: %s, status %s.', run_id, run_dir, tests_done)
 
                             # this is not an error per se, so exit normally
                             ret_val = ReturnCodes.EXIT_CODE_SUCCESS
@@ -127,17 +128,17 @@ class Forensics:
 
                 # cant work on this unless run data exists
                 else:
-                    self.logger.error('Error: Request run data was not found for: %s', run_dir)
+                    self.logger.error('Error: Request run data was not found for run id: %s, run_dir: %s', run_id, run_dir)
                     ret_val = ReturnCodes.ERROR_NO_RUN_DIR
             # cant work on this unless it exists
             else:
-                self.logger.error('Error: Request run_dir was not found for: %s', run_dir)
+                self.logger.error('Error: Request run_dir was not found forrun id: %s, run_dir: %s', run_id, run_dir)
                 ret_val = ReturnCodes.ERROR_NO_RUN_DIR
         except Exception:
-            self.logger.exception('Exception: Error processing request for run: %s', run_dir)
+            self.logger.exception('Exception: Error processing request for runrun id: %s, run_dir: %s', run_id, run_dir)
             ret_val = ReturnCodes.EXCEPTION_RUN_PROCESSING
 
-        self.logger.info('Forensics complete: run_dir: %s, ret_val: %s', run_dir, ret_val)
+        self.logger.info('Forensics complete: run_id: %s, run_dir: %s, ret_val: %s', run_id, run_dir, ret_val)
 
         # return to the caller
         return ret_val
