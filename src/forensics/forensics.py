@@ -73,13 +73,6 @@ class Forensics:
                 # init the flag for processing complete
                 keep_running: bool = True
 
-                if sys.platform == 'win32':
-                    # get the run ID
-                    run_id: str = run_dir.split('\\')[-1]
-                else:
-                    # get the run ID
-                    run_id: str = run_dir.split('/')[-1]
-
                 # try to make the call for records
                 run_data: json = self.db_info.get_run_def(run_id)
 
@@ -132,10 +125,10 @@ class Forensics:
                     ret_val = ReturnCodes.ERROR_NO_RUN_DIR
             # cant work on this unless it exists
             else:
-                self.logger.error('Error: Request run_dir was not found forrun id: %s, run_dir: %s', run_id, run_dir)
+                self.logger.error('Error: Request run_dir was not found for run id: %s, run_dir: %s', run_id, run_dir)
                 ret_val = ReturnCodes.ERROR_NO_RUN_DIR
         except Exception:
-            self.logger.exception('Exception: Error processing request for runrun id: %s, run_dir: %s', run_id, run_dir)
+            self.logger.exception('Exception: Error processing request for run id: %s, run_dir: %s', run_id, run_dir)
             ret_val = ReturnCodes.EXCEPTION_RUN_PROCESSING
 
         self.logger.info('Forensics complete: run_id: %s, run_dir: %s, ret_val: %s', run_id, run_dir, ret_val)
