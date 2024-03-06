@@ -60,6 +60,7 @@ class Forensics:
         # init the return value
         ret_val: int = ReturnCodes.EXIT_CODE_SUCCESS
 
+
         try:
             # make sure the directory exists
             if os.path.isdir(run_dir):
@@ -77,7 +78,7 @@ class Forensics:
                     # do work
                     while keep_running:
                         # get the list of tests for this run
-                        tests_done: int = self.get_tests_done(run_dir, run_data)
+                        tests_done: int = self.get_tests_done(run_id, run_dir, run_data)
 
                         # were the tests all completed?
                         if tests_done == ReturnCodes.TEST_FOUND_SUCCESS:
@@ -133,10 +134,11 @@ class Forensics:
         return ret_val
 
     @staticmethod
-    def get_tests_done(run_dir: str, run_data: json) -> int:
+    def get_tests_done(run_id: str, run_dir: str, run_data: json) -> int:
         """
         Gets the list of run tests requested
 
+        :param run_id:
         :param run_dir:
         :param run_data:
         :return:
@@ -160,7 +162,7 @@ class Forensics:
                 # get the dict key/value
                 for key, value in test.items():
                     # if the end of test marker found, or a test run was specified with no individual tests requested
-                    if os.path.isfile(os.path.join(run_dir, f'{key}_tests.complete')) or len(value) == 0:
+                    if os.path.isfile(os.path.join(run_dir, run_id, f'{key}_tests.complete')) or len(value) == 0:
                         # increment the found counter
                         count += 1
 
