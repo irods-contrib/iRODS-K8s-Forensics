@@ -60,7 +60,6 @@ class Forensics:
         # init the return value
         ret_val: int = ReturnCodes.EXIT_CODE_SUCCESS
 
-
         try:
             # make sure the directory exists
             if os.path.isdir(run_dir):
@@ -149,25 +148,19 @@ class Forensics:
         # init the test counter
         count: int = 0
 
+        # get the test executor run location
+        executor = next(iter(run_data['request_data']['tests']))
+
         # get the tests
-        tests = run_data['request_data']['tests']
+        tests = run_data['request_data']['tests'][executor]
 
         # if there were no tests for this run
         if len(tests) == 0:
             # set a return code to not look any further
             ret_val = ReturnCodes.ERROR_NO_TESTS
         else:
-            # for each test in the request list
-            for test in tests:
-                # get the dict key/value
-                for key, value in test.items():
-                    # if the end of test marker found, or a test run was specified with no individual tests requested
-                    if os.path.isfile(os.path.join(run_dir, run_id, f'{key}_tests.complete')) or len(value) == 0:
-                        # increment the found counter
-                        count += 1
-
-            # were all the tests discovered?
-            if len(tests) == count:
+            # if the end of test marker found
+            if os.path.isfile(os.path.join(run_dir, run_id, f'{executor}_tests.complete')):
                 # set the success return code
                 ret_val = ReturnCodes.TEST_FOUND_SUCCESS
 
