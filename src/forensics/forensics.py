@@ -7,8 +7,9 @@
 """
 import os
 import time
-import sys
 import json
+
+import xml.etree.ElementTree as ET
 
 from src.common.logger import LoggingUtil
 from src.common.pg_impl import PGImplementation
@@ -20,6 +21,7 @@ class Forensics:
     Class that contains functionality for forensics
 
     """
+
     def __init__(self):
         # get the app version
         self.app_version: str = os.getenv('APP_VERSION', 'Version number not set')
@@ -63,65 +65,69 @@ class Forensics:
         try:
             # make sure the directory exists
             if os.path.isdir(run_dir):
-                # init the check counter
-                count: int = 0
-
-                # init the flag for processing complete
-                keep_running: bool = True
-
-                # try to make the call for records
+                # get the run request record
                 run_data: json = self.db_info.get_run_def(run_id)
 
                 # did getting the data to go ok
                 if run_data != ReturnCodes.DB_ERROR:
-                    # do work
-                    while keep_running:
-                        # get the list of tests for this run
-                        tests_done: int = self.get_tests_done(run_id, run_dir, run_data)
+                    # get the test executor run location
+                    executor = next(iter(run_data['request_data']['tests']))
 
-                        # were the tests all completed?
-                        if tests_done == ReturnCodes.TEST_FOUND_SUCCESS:
-                            self.logger.info('End of testing markers found for: %s', run_dir)
+                    # get the tests
+                    tests_requested = run_data['request_data']['tests'][executor]
 
-                            # gather the test xml file(s)
-                            # gather iRODS server log(s)
-                            # analyze the results
-                            # do something with the results (notifications, persist in a DB...?)
+                    # if there were tests requested
+                    if len(tests_requested) > 0:
+                        # init the check counter
+                        count: int = 0
 
-                            # end the processing
-                            keep_running = False
-                        elif tests_done == 0:
-                            # have we exceeded the maximum wait time? default is 40 tries * 15 seconds
-                            if (count * self.check_interval) >= self.max_wait:
-                                self.logger.error('Max wait time of %s seconds exceeded for run id: %s, run_dir: %s.', self.max_wait, run_id, run_dir)
+                        # init the flag for processing complete
+                        keep_running: bool = True
 
-                                # set the error code
-                                ret_val = ReturnCodes.ERROR_TIMEOUT
+                        # get the full run directory
+                        full_run_dir: str = os.path.join(run_dir, run_id, f'{executor}_tests.complete')
+
+                        # do work
+                        while keep_running:
+                            # get the list of tests for this run
+                            testing_complete: int = self.get_tests_done(full_run_dir, executor)
+
+                            # were the tests all completed?
+                            if testing_complete == ReturnCodes.TEST_RESULTS_FOUND:
+                                self.logger.info('End of testing markers found for: %s', run_dir)
+
+                                # parse the test reports found in <full_run_dir>\<test executor>\irods\test-reports\
+                                ret_val = self.parse_test_reports(run_id, os.path.join(full_run_dir, executor))
 
                                 # no need to continue
-                                break
+                                keep_running = False
+                            elif testing_complete == ReturnCodes.TEST_RESULTS_NOT_FOUND:
+                                # have we exceeded the maximum wait time? default is 40 tries * 15 seconds
+                                if (count * self.check_interval) >= self.max_wait:
+                                    self.logger.error('Results max wait time of %s seconds exceeded for run id: %s, run_dir: %s.', self.max_wait,
+                                                      run_id, run_dir)
 
-                            # increment the counter
-                            count += 1
+                                    # set the error code
+                                    ret_val = ReturnCodes.ERROR_TIMEOUT
 
-                            # keep waiting for the file that signifies testing complete
-                            time.sleep(self.check_interval)
-                        else:
-                            self.logger.info('Warning No tests found for run id: %s, run_dir: %s, status %s.', run_id, run_dir, tests_done)
+                                    # no need to continue
+                                    break
 
-                            # this is not an error per se, so exit normally
-                            ret_val = ReturnCodes.EXIT_CODE_SUCCESS
+                                # increment the counter
+                                count += 1
 
-                            # no tests, no need to continue
-                            break
-
+                                # keep waiting for the file that signifies testing complete
+                                time.sleep(self.check_interval)
+                    else:
+                        self.logger.error('Error: No tests found for run id: %s, run_dir: %s.', run_id, run_dir)
+                        ret_val = ReturnCodes.ERROR_NO_TESTS
                 # cant work on this unless run data exists
                 else:
                     self.logger.error('Error: Request run data was not found for run id: %s, run_dir: %s', run_id, run_dir)
                     ret_val = ReturnCodes.ERROR_NO_RUN_DIR
             # cant work on this unless it exists
             else:
-                self.logger.error('Error: Request run_dir was not found for run id: %s, run_dir: %s', run_id, run_dir)
+                self.logger.error('Error: Run data directory was not found for run id: %s, run_dir: %s', run_id, run_dir)
                 ret_val = ReturnCodes.ERROR_NO_RUN_DIR
         except Exception:
             self.logger.exception('Exception: Error processing request for run id: %s, run_dir: %s', run_id, run_dir)
@@ -133,36 +139,58 @@ class Forensics:
         return ret_val
 
     @staticmethod
-    def get_tests_done(run_id: str, run_dir: str, run_data: json) -> int:
+    def get_tests_done(full_run_dir, executor: str) -> ReturnCodes:
         """
         Gets the list of run tests requested
 
-        :param run_id:
-        :param run_dir:
-        :param run_data:
+        :param full_run_dir:
+        :param executor:
         :return:
         """
         # init the retval
-        ret_val: int = ReturnCodes.TEST_FOUND_FAILURE
+        ret_val: ReturnCodes = ReturnCodes.TEST_RESULTS_NOT_FOUND
 
-        # init the test counter
-        count: int = 0
+        # if the end of test marker found
+        if os.path.isfile(os.path.join(full_run_dir, f'{executor}_tests.complete')):
+            # set the success return code
+            ret_val = ReturnCodes.TEST_RESULTS_FOUND
 
-        # get the test executor run location
-        executor = next(iter(run_data['request_data']['tests']))
+        # return to the caller
+        return ret_val
 
-        # get the tests
-        tests = run_data['request_data']['tests'][executor]
+    def parse_test_reports(self, run_id: str, full_run_dir: str) -> ReturnCodes:
+        """
+        Parses the test reports
 
-        # if there were no tests for this run
-        if len(tests) == 0:
-            # set a return code to not look any further
-            ret_val = ReturnCodes.ERROR_NO_TESTS
-        else:
-            # if the end of test marker found
-            if os.path.isfile(os.path.join(run_dir, run_id, f'{executor}_tests.complete')):
-                # set the success return code
-                ret_val = ReturnCodes.TEST_FOUND_SUCCESS
+        :param run_id:
+        :param full_run_dir:
+        :return:
+        """
+        # init the return
+        ret_val: ReturnCodes = ReturnCodes.ERROR_RESULT_PARSE_FAILURE
+
+        # append the test reports directory to the path
+        test_reports_dir = os.path.join(full_run_dir, 'irods/test-reports/')
+
+        # get the files to parse
+        files: list = [file for file in os.listdir(test_reports_dir) if file.endswith('.xml')]
+
+        # init the summary data variable
+        run_summary: list = []
+
+        # for each file in the test results directory
+        for file in files:
+            # parse the xml file
+            tree = ET.parse(os.path.join(test_reports_dir, file))
+
+            # get root element
+            root = tree.getroot()
+
+            # capture the summary data on the root element in the file
+            run_summary.append({root.attrib['name']: ', '.join([f'{key} - {value}' for key, value in root.attrib.items() if key != 'name'])})
+
+        # persist the summary to the DB
+        ret_val = self.db_info.update_run_results(run_id, run_summary)
 
         # return to the caller
         return ret_val

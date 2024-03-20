@@ -7,6 +7,8 @@
 
     Author: Phil Owen, RENCI.org
 """
+import json
+
 from src.common.pg_utils_multi import PGUtilsMultiConnect
 from src.common.logger import LoggingUtil
 
@@ -53,6 +55,22 @@ class PGImplementation(PGUtilsMultiConnect):
 
         # create the sql
         sql: str =  f'SELECT public.get_supervisor_run_def_json({run_id})'
+
+        # get the data
+        ret_val = self.exec_sql('irods-sv', sql)
+
+        # return the data
+        return ret_val
+
+    def update_run_results(self, run_id: str, results: json):
+        """
+        gets the supervisor run request for the run id passed.
+
+        :return:
+        """
+
+        # create the sql
+        sql: str = f"SELECT public.update_run_results({run_id}, '{json.dumps(results)}')"
 
         # get the data
         ret_val = self.exec_sql('irods-sv', sql)
