@@ -14,7 +14,7 @@ from src.forensics.forensics import Forensics
 from src.common.enum_utils import ReturnCodes
 
 
-@pytest.mark.skip(reason="Local test only")
+#@pytest.mark.skip(reason="Local test only")
 def test_run():
     """
     tests doing the normal operations for initial and final forensics.
@@ -33,7 +33,7 @@ def test_run():
     run_id: str = '0'
 
     # set up the test directory
-    run_dir: str = os.path.join(os.getenv('TEST_PATH'), run_id)
+    run_dir: str = os.path.join(os.getenv('TEST_PATH'))
 
     # make the call to do forensics
     ret_val = forensics.run(run_id, run_dir)
@@ -42,10 +42,10 @@ def test_run():
     assert ret_val == ReturnCodes.ERROR_NO_RUN_DIR
 
     # set a run ID
-    run_id: str = '67'
+    run_id: str = '68'
 
     # set up the test directory
-    run_dir: str = os.path.join(os.getenv('TEST_PATH'), run_id)
+    run_dir: str = os.path.join(os.getenv('TEST_PATH'))
 
     # make the call to do forensics
     ret_val = forensics.run(run_id, run_dir)

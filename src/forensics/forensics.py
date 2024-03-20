@@ -85,7 +85,7 @@ class Forensics:
                         keep_running: bool = True
 
                         # get the full run directory
-                        full_run_dir: str = os.path.join(run_dir, run_id, f'{executor}_tests.complete')
+                        full_run_dir: str = os.path.join(run_dir, run_id)
 
                         # do work
                         while keep_running:
@@ -94,7 +94,7 @@ class Forensics:
 
                             # were the tests all completed?
                             if testing_complete == ReturnCodes.TEST_RESULTS_FOUND:
-                                self.logger.info('End of testing markers found for: %s', run_dir)
+                                self.logger.info('End of testing marker found for: %s', full_run_dir)
 
                                 # parse the test reports found in <full_run_dir>\<test executor>\irods\test-reports\
                                 ret_val = self.parse_test_reports(run_id, os.path.join(full_run_dir, executor))
@@ -102,6 +102,8 @@ class Forensics:
                                 # no need to continue
                                 keep_running = False
                             elif testing_complete == ReturnCodes.TEST_RESULTS_NOT_FOUND:
+                                self.logger.info('End of testing marker NOT found for: %s', full_run_dir)
+
                                 # have we exceeded the maximum wait time? default is 40 tries * 15 seconds
                                 if (count * self.check_interval) >= self.max_wait:
                                     self.logger.error('Results max wait time of %s seconds exceeded for run id: %s, run_dir: %s.', self.max_wait,
