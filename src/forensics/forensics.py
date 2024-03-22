@@ -9,7 +9,7 @@ import os
 import time
 import json
 
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ElTree
 
 from src.common.logger import LoggingUtil
 from src.common.pg_impl import PGImplementation
@@ -174,25 +174,66 @@ class Forensics:
         # append the test reports directory to the path
         test_reports_dir = os.path.join(full_run_dir, 'irods/test-reports/')
 
-        # get the files to parse
-        files: list = [file for file in os.listdir(test_reports_dir) if file.endswith('.xml')]
+        # check if the directory exists
+        if os.path.isdir(test_reports_dir):
+            # get the files to parse
+            files: list = [file for file in os.listdir(test_reports_dir) if file.endswith('.xml')]
 
-        # init the summary data variable
-        run_summary: list = []
+            # were there any xml files?
+            if len(files):
+                # init the summary data variable
+                run_summary: dict = {}
 
-        # for each file in the test results directory
-        for file in files:
-            # parse the xml file
-            tree = ET.parse(os.path.join(test_reports_dir, file))
+                # for each file in the test results directory
+                for file in files:
+                    # parse the xml file
+                    tree = ElTree.parse(os.path.join(test_reports_dir, file))
 
-            # get root element
-            root = tree.getroot()
+                    # get root element of the XML
+                    root = tree.getroot()
 
-            # capture the summary data on the root element in the file
-            run_summary.append({root.attrib['name']: ', '.join([f'{key} - {value}' for key, value in root.attrib.items() if key != 'name'])})
+                    # capture the summary data on the root element in the XML
+                    run_summary[root.attrib['name']] = root.attrib
 
-        # persist the summary to the DB
-        ret_val = self.db_info.update_run_results(run_id, run_summary)
+                    # capture the data at these tags if it exists
+                    for tag in ['error', 'failure']:
+                        # get the data and save it if it exists
+                        self.get_tag_data(root, run_summary, tag)
+
+                # persist the summary to the DB
+                ret_val = self.db_info.update_run_results(run_id, run_summary)
+            else:
+                # set the return code
+                ret_val = ReturnCodes.ERROR_NO_RESULT_DATA
+        else:
+            # set the return code
+            ret_val = ReturnCodes.ERROR_NO_RESULT_DIR
 
         # return to the caller
         return ret_val
+
+    @staticmethod
+    def get_tag_data(root: ElTree.Element, run_summary: dict, tag: str):
+        """
+        gets the data at the tag specified
+
+        :param root:
+        :param run_summary:
+        :param tag:
+        :return:
+        """
+        # get a list of the errors
+        data = root.findall(f"./testcase/{tag}")
+
+        # if there were any found
+        if data:
+            # add on a list for the entries
+            run_summary[root.attrib['name']].update({f'{tag}_details': []})
+
+            # for each entry
+            for item in data:
+                # flatten out the elements
+                item.attrib.update({'text': item.text})
+
+                # add the entry into the list
+                run_summary[root.attrib['name']][f'{tag}_details'].extend([item.attrib])
