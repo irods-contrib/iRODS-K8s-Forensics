@@ -68,9 +68,11 @@ class PGImplementation(PGUtilsMultiConnect):
 
         :return:
         """
+        # make sure the sql lacks single quotes
+        results = json.dumps(results).replace('\'', '').replace("\\n", ' ')
 
         # create the sql
-        sql: str = f"SELECT public.update_run_results({run_id}, '{json.dumps(results)}')"
+        sql: str = f"SELECT public.update_run_results({run_id}, '{results}')"
 
         # get the data
         ret_val = self.exec_sql('irods-sv', sql)
