@@ -31,3 +31,5 @@ class ReturnCodes(int, Enum):
     ERROR_NO_RUN_DATA = -96
     ERROR_NO_TESTS = -95
     ERROR_RESULT_PARSE_FAILURE = -94
+    ERROR_NO_RESULT_DIR = -93
+    ERROR_NO_RESULT_DATA = -92
