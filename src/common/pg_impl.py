@@ -69,7 +69,7 @@ class PGImplementation(PGUtilsMultiConnect):
         :return:
         """
         # make sure the sql lacks single quotes
-        results = json.dumps(results).replace('\'', '').replace("\\n", ' ')
+        results = json.dumps(results).replace('\'', '')
 
         # create the sql
         sql: str = f"SELECT public.update_run_results({run_id}, '{results}')"
