@@ -25,6 +25,11 @@ The iRODS-K8s Forensics workflow step microservice.
 The iRODS-K8s Forensics product is a microservice used in an iRODS K8s Supervisor workflow step to analyze and summarize 
 the results of tests performed.
 
-There are GitHub actions to maintain code quality in this repo:
+### There are GitHub actions to maintain code quality in this repo:
  - Pylint (minimum score of 10/10 to pass),
  - Build/publish a Docker image.
+
+### How to build the Docker image for this product
+
+ - docker build -f Dockerfile -t forensics . && docker run --name forensics forensics 
+ - This image must be placed in a container image registry and referenced in the Job supervisor config DB table or using the Supervisor settings application.
