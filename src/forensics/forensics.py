@@ -96,7 +96,7 @@ class Forensics:
                             if testing_complete == ReturnCodes.TEST_RESULTS_FOUND:
                                 self.logger.info('End of testing marker found for: %s', full_run_dir)
 
-                                # parse the test reports found in <full_run_dir>\<test executor>\irods\test-reports\
+                                # parse the test reports found in <full_run_dir>\<test executor>\test-reports\
                                 ret_val = self.parse_test_reports(run_id, os.path.join(full_run_dir, executor))
 
                                 # no need to continue
@@ -172,7 +172,7 @@ class Forensics:
         ret_val: ReturnCodes = ReturnCodes.ERROR_RESULT_PARSE_FAILURE
 
         # append the test reports directory to the path
-        test_reports_dir = os.path.join(full_run_dir, 'irods/test-reports/')
+        test_reports_dir = os.path.join(full_run_dir, 'test-reports/')
 
         # check if the directory exists
         if os.path.isdir(test_reports_dir):
