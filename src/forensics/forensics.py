@@ -123,6 +123,7 @@ class Forensics:
                     else:
                         self.logger.error('Error: No tests found for run id: %s, run_dir: %s.', run_id, run_dir)
                         ret_val = ReturnCodes.ERROR_NO_TESTS
+
                 # cant work on this unless run data exists
                 else:
                     self.logger.error('Error: Request run data was not found for run id: %s, run_dir: %s', run_id, run_dir)
@@ -134,6 +135,11 @@ class Forensics:
         except Exception:
             self.logger.exception('Exception: Error processing request for run id: %s, run_dir: %s', run_id, run_dir)
             ret_val = ReturnCodes.EXCEPTION_RUN_PROCESSING
+
+        # if there was an issue
+        if ret_val != ReturnCodes.EXIT_CODE_SUCCESS:
+            # persist the summary to the DB
+            ret_val = self.db_info.update_run_results(run_id, {'Error': ret_val})
 
         self.logger.info('Forensics complete: run_id: %s, run_dir: %s, ret_val: %s', run_id, run_dir, ret_val)
 
