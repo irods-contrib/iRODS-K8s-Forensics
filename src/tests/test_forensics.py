@@ -42,7 +42,7 @@ def test_run():
     assert ret_val == ReturnCodes.ERROR_NO_RUN_DIR
 
     # set a run ID
-    run_id: str = '67'
+    run_id: str = '1'
 
     # set up the test directory
     run_dir: str = os.path.join(os.getenv('TEST_PATH'))
@@ -54,7 +54,7 @@ def test_run():
     assert ret_val == ReturnCodes.EXIT_CODE_SUCCESS
 
 
-@pytest.mark.skip(reason="Local test only")
+#@pytest.mark.skip(reason="Local test only")
 def test_parse_test_results():
     """
     tests the parsing of a test results xml file
@@ -70,7 +70,7 @@ def test_parse_test_results():
     forensics = Forensics()
 
     # set a run ID
-    run_id: str = '67'
+    run_id: str = '1'
 
     # init the run directory. there is no CONSUMER data directory for this test
     run_dir: str = os.path.join(os.getenv('TEST_PATH'), run_id, 'CONSUMER')
@@ -91,7 +91,7 @@ def test_parse_test_results():
     assert ret_val == ReturnCodes.EXIT_CODE_SUCCESS
 
     # set a run ID
-    run_id: str = '68'
+    run_id: str = '2'
 
     # init the run directory. there is a PROVIDER data directory but no test files for this one
     run_dir: str = os.path.join(os.getenv('TEST_PATH'), run_id, 'PROVIDER')
