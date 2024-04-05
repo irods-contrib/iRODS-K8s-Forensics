@@ -94,7 +94,7 @@ class Forensics:
 
                             # were the tests all completed?
                             if testing_complete == ReturnCodes.TEST_RESULTS_FOUND:
-                                self.logger.info('End of testing marker found for: %s', full_run_dir)
+                                self.logger.info('End of testing marker found in: %s', full_run_dir)
 
                                 # parse the test reports found in <full_run_dir>\<test executor>\test-reports\
                                 ret_val = self.parse_test_reports(run_id, os.path.join(full_run_dir, executor))
@@ -102,7 +102,7 @@ class Forensics:
                                 # no need to continue
                                 keep_running = False
                             elif testing_complete == ReturnCodes.TEST_RESULTS_NOT_FOUND:
-                                self.logger.info('End of testing marker NOT found for: %s', full_run_dir)
+                                self.logger.info('End of testing marker NOT found in: %s', full_run_dir)
 
                                 # have we exceeded the maximum wait time? default is 40 tries * 15 seconds
                                 if (count * self.check_interval) >= self.max_wait:
